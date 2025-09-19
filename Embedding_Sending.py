@@ -23,8 +23,8 @@ def get_jwt_token():
 
     current_time = int(time.time())
     jwt_payload = {
-        "iss": "integration_key_here",
-        "sub": "user_id_here",
+        "iss": "dfba8887-518b-488d-a787-76794a3a6c9d",
+        "sub": "f5e619d1-0227-42e9-96f5-17e82cd4fa4c",
         "aud": "account-d.docusign.com",
         "iat": current_time,
         "exp": current_time + 3600,
@@ -72,7 +72,7 @@ def create_envelope(access_token):
         "emailSubject": "Please sign this document",
         "status": "created",  # Draft envelope
         "documents": [{
-            "documentBase64": pdf_to_base64("/Users/abhay.nelaturu/Downloads/sample pdf.pdf"),
+            "documentBase64": pdf_to_base64("sample pdf.pdf"),
             "name": "Sample Document",
             "fileExtension": "pdf",
             "documentId": "1"
@@ -116,7 +116,7 @@ def generate_sender_view_url(access_token, envelope_id):
     return response.json()['url']
 
 
-@app.route("/embedded-sender-url")
+@app.route("/")
 def embedded_sender_url():
     try:
         token = get_jwt_token()
