@@ -21,37 +21,44 @@ def get_jwt_token():
     if cached_access_token and token_expiration_time and datetime.utcnow() < token_expiration_time:
         return cached_access_token
 
-    current_time = int(time.time())
-    jwt_payload = {
-        "iss": "dfba8887-518b-488d-a787-76794a3a6c9d",
-        "sub": "f5e619d1-0227-42e9-96f5-17e82cd4fa4c",
-        "aud": "account-d.docusign.com",
-        "iat": current_time,
-        "exp": current_time + 3600,
-        "scope": "signature impersonation"
-    }
+    try:
+        # --- NEW METHOD: Read key from a file ---
+        with open("private.key", "r") as key_file:
+            private_key = key_file.read()
+        # --- END OF NEW METHOD ---
 
-    private_key = """-----BEGIN RSA PRIVATE KEY-----
-                    
-                    -----END RSA PRIVATE KEY-----"""
-
-    jwt_token = jwt.encode(jwt_payload, private_key, algorithm='RS256')
-    url = f"https://account-d.docusign.com/oauth/token"
-    response = requests.post(
-        url,
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-        data={
-            "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
-            "assertion": jwt_token
+        current_time = int(time.time())
+        jwt_payload = {
+            "iss": "dfba8887-518b-488d-a787-76794a3a6c9d", # Make sure to replace this
+            "sub": "f5e619d1-0227-42e9-96f5-17e82cd4fa4c",         # And this
+            "aud": "account-d.docusign.com",
+            "iat": current_time,
+            "exp": current_time + 3600,
+            "scope": "signature impersonation"
         }
-    )
-    print(requests)
-    print(response)
-    response.raise_for_status()
-    token_data = response.json()
-    cached_access_token = token_data['access_token']
-    token_expiration_time = datetime.utcnow() + timedelta(seconds=token_data['expires_in'] - 60)
-    return cached_access_token
+
+        jwt_token = jwt.encode(jwt_payload, private_key, algorithm='RS256')
+        url = "https://account-d.docusign.com/oauth/token"
+        response = requests.post(
+            url,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            data={
+                "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+                "assertion": jwt_token
+            }
+        )
+        response.raise_for_status()
+        token_data = response.json()
+        cached_access_token = token_data['access_token']
+        token_expiration_time = datetime.utcnow() + timedelta(seconds=token_data['expires_in'] - 60)
+        return cached_access_token
+
+    except FileNotFoundError:
+        print("FATAL ERROR: The private.key file was not found in the application directory.")
+        raise
+    except Exception as e:
+        print(f"An error occurred during token generation: {e}")
+        raise
 
 def pdf_to_base64(pdf_path):
     with open(pdf_path, "rb") as pdf_file:
